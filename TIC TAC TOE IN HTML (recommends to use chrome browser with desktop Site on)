@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #main-menu, #tic-tac-toe {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        #main-menu.active, #tic-tac-toe.active {
+            display: flex;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 2px solid #ccc;
+            font-size: 2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+        #status, #mode-selector, #taunt-bar {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .difficulty-selector {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .difficulty-selector.active {
+            display: flex;
+        }
+        #taunt-bar {
+            color: #ff6347;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-menu" class="active">
+        <h1>Tic-Tac-Toe</h1>
+        <button onclick="showTicTacToe()">Play Tic-Tac-Toe</button>
+    </div>
+
+    <!-- Tic-Tac-Toe Game -->
+    <div id="tic-tac-toe">
+        <div id="mode-selector">
+            <button onclick="setMode('pvp')">Player vs Player</button>
+            <button onclick="setMode('pva')">Player vs AI</button>
+        </div>
+        <div id="difficulty-selector" class="difficulty-selector">
+            <button onclick="setDifficulty('easy')">Easy</button>
+            <button onclick="setDifficulty('medium')">Medium</button>
+            <button onclick="setDifficulty('hard')">Hard</button>
+        </div>
+        <div id="status">Select game mode</div>
+        <div id="taunt-bar"></div>
+        <div id="game-board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button onclick="resetGame()">Restart Game</button>
+        <button onclick="showMainMenu()">Back to Main Menu</button>
+    </div>
+
+    <script>
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let mode = null;
+        let difficulty = 'medium';
+
+        const mainMenu = document.getElementById('main-menu');
+        const ticTacToe = document.getElementById('tic-tac-toe');
+        const board = document.getElementById('game-board');
+        const status = document.getElementById('status');
+        const tauntBar = document.getElementById('taunt-bar');
+        const cells = Array.from(document.getElementsByClassName('cell'));
+        const difficultySelector = document.getElementById('difficulty-selector');
+
+        const winningCombinations = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
+
+        const tauntMessages = {
+            easy: [
+                "Better luck next time!",
+                "Ouch! That hurt!",
+                "You call that a move?",
+                "Try again, will ya?",
+                "Is that all you got?",
+                "I'm not impressed!",
+                "Ha! You fell for it!"
+            ],
+            medium: [
+                "Nice try, but no!",
+                "You call that a strategy?",
+                "So close yet so far!",
+                "You should have seen that coming!",
+                "Not bad, but I'm better!",
+                "Oops! Did you forget to play?",
+                "Try to outsmart me next time!"
+            ],
+            hard: [
+                "Is that all you’ve got?",
+                "I’m unbeatable, remember?",
+                "Did you really think that would work?",
+                "Another round and you’ll be a pro!",
+                "You’re getting better, but not enough!",
+                "Was that the best move you could make?",
+                "Better luck next time, human!"
+            ]
+        };
+
+        const cryMessages = {
+            easy: [
+                "I can't believe I lost!",
+                "This isn’t happening!",
+                "I should have won that!",
+                "Why do I always lose?",
+                "I need to improve!",
+                "That was too close!",
+                "I’m so disappointed!"
+            ],
+            medium: [
+                "I guess I need more practice!",
+                "You were lucky this time!",
+                "That was a close one!",
+                "I’ll win next time, for sure!",
+                "You got me this time!",
+                "I underestimated you!",
+                "I need to up my game!"
+            ],
+            hard: [
+                "I shouldn’t have lost that!",
+                "You got lucky, that’s all!",
+                "I’ll make sure to win next time!",
+                "Don’t get used to this victory!",
+                "I’ll be back stronger!",
+                "You were just lucky!",
+                "Impressive, but not enough!"
+            ]
+        };
+
+        function showMainMenu() {
+            mainMenu.classList.add('active');
+            ticTacToe.classList.remove('active');
+            resetTicTacToe();
+        }
+
+        function showTicTacToe() {
+            mainMenu.classList.remove('active');
+            ticTacToe.classList.add('active');
+        }
+
+        function resetTicTacToe() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.style.backgroundColor = 'white';
+            });
+            currentPlayer = 'X';
+            gameActive = true;
+            status.textContent = 'Select game mode';
+            difficultySelector.classList.remove('active');
+            tauntBar.style.display = 'none';
+        }
+
+        function setMode(selectedMode) {
+            mode = selectedMode;
+            currentPlayer = 'X';
+            gameActive = true;
+            status.textContent = `Player ${currentPlayer}'s turn`;
+            if (mode === 'pva') {
+                difficultySelector.classList.add('active');
+            } else {
+                difficultySelector.classList.remove('active');
+            }
+        }
+
+        function setDifficulty(level) {
+            difficulty = level;
+            status.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        function resetGame() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.style.backgroundColor = 'white';
+            });
+            currentPlayer = 'X';
+            gameActive = true;
+            status.textContent = `Player ${currentPlayer}'s turn`;
+            tauntBar.style.display = 'none';
+        }
+
+        function checkWinner() {
+            for (const combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (cells[a].textContent && cells[a].textContent === cells[b].textContent && cells[a].textContent === cells[c].textContent) {
+                    gameActive = false;
+                    if (cells[a].textContent === 'X') {
+                        status.textContent = `Player X wins!`;
+                        if (mode === 'pva') {
+                            tauntBar.textContent = getRandomMessage(cryMessages[difficulty]);
+                            tauntBar.style.display = 'block';
+                        }
+                    } else {
+                        status.textContent = `Player O wins!`;
+                        if (mode === 'pva') {
+                            tauntBar.textContent = getRandomMessage(tauntMessages[difficulty]);
+                            tauntBar.style.display = 'block';
+                        }
+                    }
+                    combination.forEach(index => cells[index].style.backgroundColor = '#FFA500');
+                    return;
+                }
+            }
+            if (cells.every(cell => cell.textContent)) {
+                gameActive = false;
+                status.textContent = 'It\'s a draw!';
+                cells.forEach(cell => cell.style.backgroundColor = '#FFFFE0');
+                tauntBar.style.display = 'none';
+            }
+        }
+
+        function handleClick(event) {
+            const cell = event.target;
+            if (cell.textContent || !gameActive) return;
+
+            cell.textContent = currentPlayer;
+            checkWinner();
+            if (mode === 'pva' && currentPlayer === 'X' && gameActive) {
+                currentPlayer = 'O';
+                if (gameActive) {
+                    aiMove();
+                }
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                if (gameActive) {
+                    status.textContent = `Player ${currentPlayer}'s turn`;
+                }
+            }
+        }
+
+        function aiMove() {
+            const availableMoves = cells
+                .map((cell, index) => cell.textContent === '' ? index : null)
+                .filter(index => index !== null);
+
+            let bestMove;
+            if (difficulty === 'easy') {
+                bestMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            } else if (difficulty === 'medium') {
+                bestMove = minimax(cells, 'O', 3).index;
+            } else {
+                bestMove = minimax(cells, 'O', 0).index;
+            }
+
+            cells[bestMove].textContent = 'O';
+            checkWinner();
+            currentPlayer = 'X';
+            if (gameActive) {
+                status.textContent = `Player ${currentPlayer}'s turn`;
+            }
+        }
+
+        function minimax(board, player, depth) {
+            const availableMoves = board
+                .map((cell, index) => cell.textContent === '' ? index : null)
+                .filter(index => index !== null);
+
+            if (checkWin(board, 'X')) return { score: -10 + depth };
+            if (checkWin(board, 'O')) return { score: 10 - depth };
+            if (availableMoves.length === 0) return { score: 0 };
+
+            const scores = [];
+            for (const move of availableMoves) {
+                board[move].textContent = player;
+                const score = minimax(board, player === 'X' ? 'O' : 'X', depth + 1).score;
+                board[move].textContent = '';
+                scores.push({ index: move, score });
+            }
+
+            if (player === 'O') {
+                return scores.reduce((best, current) => current.score > best.score ? current : best);
+            } else {
+                return scores.reduce((best, current) => current.score < best.score ? current : best);
+            }
+        }
+
+        function getRandomMessage(messages) {
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        function checkWin(board, player) {
+            return winningCombinations.some(combination => {
+                return combination.every(index => board[index].textContent === player);
+            });
+        }
+
+        board.addEventListener('click', handleClick);
+    </script>
+</body>
+</html>
