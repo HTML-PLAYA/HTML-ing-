@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator and Math Problem Randomizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #fff;
+            color: #000;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+        .screen.active {
+            display: flex;
+        }
+        #home-screen {
+            background-color: #fff;
+            color: #000;
+        }
+        h1 {
+            margin: 20px 0;
+            font-size: 2em;
+            color: #FFA500;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #FFA500;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #ffb732;
+        }
+        #calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 10px;
+            width: 300px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #display {
+            grid-column: span 4;
+            height: 50px;
+            background-color: #000;
+            color: #fff;
+            font-size: 2em;
+            text-align: right;
+            padding: 10px;
+            border: 2px solid #FFA500;
+            border-radius: 5px;
+        }
+        .button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            background-color: #FFA500;
+            color: #000;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #ffb732;
+        }
+        .button.operator {
+            background-color: #444;
+            color: #FFA500;
+        }
+        .button.operator:hover {
+            background-color: #555;
+        }
+        .button.zero {
+            grid-column: span 2;
+        }
+        #question {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #answer {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            width: 100px;
+            text-align: center;
+        }
+        #result {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #ff6347;
+        }
+        #settings-screen {
+            background-color: #fff;
+            color: #000;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            padding: 5px;
+            font-size: 1em;
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div id="home-screen" class="screen active">
+        <h1>Welcome</h1>
+        <button onclick="showCalculator()">Simple Calculator</button>
+        <button onclick="showMathGame()">Math Problem Randomizer</button>
+        <button onclick="showSettings()">Settings</button>
+    </div>
+
+    <div id="calculator-screen" class="screen">
+        <div id="calculator">
+            <div id="display">0</div>
+            <button class="button" onclick="appendNumber(7)">7</button>
+            <button class="button" onclick="appendNumber(8)">8</button>
+            <button class="button" onclick="appendNumber(9)">9</button>
+            <button class="button operator" onclick="chooseOperation('/')">÷</button>
+            <button class="button" onclick="appendNumber(4)">4</button>
+            <button class="button" onclick="appendNumber(5)">5</button>
+            <button class="button" onclick="appendNumber(6)">6</button>
+            <button class="button operator" onclick="chooseOperation('*')">×</button>
+            <button class="button" onclick="appendNumber(1)">1</button>
+            <button class="button" onclick="appendNumber(2)">2</button>
+            <button class="button" onclick="appendNumber(3)">3</button>
+            <button class="button operator" onclick="chooseOperation('-')">−</button>
+            <button class="button zero" onclick="appendNumber(0)">0</button>
+            <button class="button" onclick="appendNumber('.')">.</button>
+            <button class="button operator" onclick="chooseOperation('+')">+</button>
+            <button class="button operator" onclick="calculate()">=</button>
+            <button class="button operator" onclick="clearDisplay()" style="grid-column: span 4;">Clear</button>
+        </div>
+        <button onclick="showHomeScreen()">Back to Home</button>
+    </div>
+
+    <div id="math-game-screen" class="screen">
+        <div id="question">Solve the problem:</div>
+        <input type="text" id="answer" placeholder="Your answer">
+        <button onclick="submitAnswer()">Submit</button>
+        <div id="result"></div>
+        <button onclick="generateProblem()">Next Problem</button>
+        <button onclick="showHomeScreen()">Back to Home</button>
+    </div>
+
+    <div id="settings-screen" class="screen">
+        <h1>Settings</h1>
+        <label for="min-number">Min Number:</label>
+        <input type="number" id="min-number" value="1" min="1">
+        <label for="max-number">Max Number:</label>
+        <input type="number" id="max-number" value="10" min="1">
+        <button onclick="saveSettings()">Save Settings</button>
+        <button onclick="showHomeScreen()">Back to Home</button>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let currentOperand = '';
+        let previousOperand = '';
+        let operation = null;
+
+        function showHomeScreen() {
+            document.getElementById('home-screen').classList.add('active');
+            document.getElementById('calculator-screen').classList.remove('active');
+            document.getElementById('math-game-screen').classList.remove('active');
+            document.getElementById('settings-screen').classList.remove('active');
+        }
+
+        function showCalculator() {
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('calculator-screen').classList.add('active');
+        }
+
+        function showMathGame() {
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('math-game-screen').classList.add('active');
+            generateProblem();
+        }
+
+        function showSettings() {
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('settings-screen').classList.add('active');
+        }
+
+        function appendNumber(number) {
+            if (currentOperand.includes('.') && number === '.') return;
+            currentOperand = currentOperand.toString() + number.toString();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            display.innerText = currentOperand;
+        }
+
+        function chooseOperation(op) {
+            if (currentOperand === '') return;
+            if (previousOperand !== '') {
+                calculate();
+            }
+            operation = op;
+            previousOperand = currentOperand;
+            currentOperand = '';
+        }
+
+        function calculate() {
+            let computation;
+            const prev = parseFloat(previousOperand);
+            const current = parseFloat(currentOperand);
+            if (isNaN(prev) || isNaN(current)) return;
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    break;
+                case '-':
+                    computation = prev - current;
+                    break;
+                case '*':
+                    computation = prev * current;
+                    break;
+                case '/':
+                    computation = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            currentOperand = computation;
+            operation = null;
+            previousOperand = '';
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentOperand = '';
+            previousOperand = '';
+            operation = null;
+            display.innerText = '0';
+      }
+      // Math Problem Randomizer
+        function generateProblem() {
+            const min = parseInt(document.getElementById('min-number').value, 10);
+            const max = parseInt(document.getElementById('max-number').value, 10);
+            const operations = ['+', '-', '*', '/'];
+            const num1 = Math.floor(Math.random() * (max - min + 1)) + min;
+            const num2 = Math.floor(Math.random() * (max - min + 1)) + min;
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+
+            document.getElementById('question').innerText = `What is ${num1} ${operation} ${num2}?`;
+            document.getElementById('answer').value = '';
+            document.getElementById('result').innerText = '';
+            document.getElementById('answer').dataset.correctAnswer = eval(`${num1} ${operation} ${num2}`);
+        }
+
+        function submitAnswer() {
+            const playerAnswer = parseFloat(document.getElementById('answer').value);
+            const correctAnswer = parseFloat(document.getElementById('answer').dataset.correctAnswer);
+            const result = document.getElementById('result');
+
+            if (playerAnswer === correctAnswer) {
+                result.innerText = 'Correct!';
+            } else {
+                result.innerText = `Incorrect. The correct answer is ${correctAnswer}.`;
+            }
+        }
+
+        // Settings Screen
+        function saveSettings() {
+            const minNumber = document.getElementById('min-number').value;
+            const maxNumber = document.getElementById('max-number').value;
+
+            localStorage.setItem('minNumber', minNumber);
+            localStorage.setItem('maxNumber', maxNumber);
+        }
+
+        // Load settings from local storage
+        function loadSettings() {
+            const minNumber = localStorage.getItem('minNumber');
+            const maxNumber = localStorage.getItem('maxNumber');
+
+            if (minNumber !== null) {
+                document.getElementById('min-number').value = minNumber;
+            }
+            if (maxNumber !== null) {
+                document.getElementById('max-number').value = maxNumber;
+            }
+        }
+
+        // Initialize settings
+        loadSettings();
+
+        // Initialize home screen
+        showHomeScreen();
+    </script>
+</body>
+</html>
